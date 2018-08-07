@@ -40,7 +40,7 @@ and `sampler.py`.
 To cite E-MAML please use
 
 ```bibtex
-@article{stadie2018some,
+@article{stadie2018e-maml,
   title={Some considerations on learning to explore via meta-reinforcement learning},
   author={Stadie, Bradly C and Yang, Ge and Houthooft, Rein and Chen, Xi and Duan, Yan and Wu, Yuhuai and Abbeel, Pieter and Sutskever, Ilya},
   journal={arXiv preprint arXiv:1803.01118},
