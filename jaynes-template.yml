@@ -1,0 +1,77 @@
+version: 0
+hosts:
+  slurm: &slurm-host
+    ip: <cluster-ip>
+    username: <your-ssh-username>
+    password: <your-password>
+    port: 22
+mounts:
+  - !mounts.SSHCode &e_maml_code
+    <<: *slurm-host
+    local_path: .
+    host_path: /usr/home/<your-username>/jaynes-mounts/e_maml_tf/{now:%Y-%m-%d}/{now:%H%M%S.%f}/e_maml_tf
+    pypath: true
+    excludes: >-
+      --exclude='data'
+      --exclude='samples'
+      --exclude='figures'
+      --exclude='results'
+      --exclude='analysis'
+      --exclude='*__pycache__'
+      --exclude='*.git'
+      --exclude='*.idea'
+      --exclude='*.egg-info'
+      --exclude='*.pkl'
+    compress: true
+default: &default_run
+  mounts:
+    - *e_maml_code
+  runner: &default_runner
+    # example environment configuration for MuJoCo simulators
+    envs: >-
+      LC_CTYPE=en_US.UTF-8
+      PYTHONPATH=$PYTHONPATH:/user/home/<your-username>/.local/lib/python3.6/site-packages/
+      LD_LIBRARY_PATH=/user/home/<your-username>/.mujoco/mujoco200/bin:/usr/local/nvidia/lib64:$LD_LIBRARY_PATH
+    # this is the setup script. To see when/where this is run, use `jaynes.config(verbose=True)`.
+    pypath: "{mounts[0].host_path}"
+    launch_directory: "{mounts[0].host_path}"
+    partition: "p100" # p100 | max12hours | cpu
+    setup: | # The tensorflow-gpu module fails without cuda (or GPU)
+      . /usr/share/modules/init/profile.sh
+      module load pytorch-36
+    entry_script: "/pkgs/anaconda3/bin/python -u -m jaynes.entry"
+    args:
+      - preserve-env
+    n_cpu: 8
+    n_gpu: 0
+    time_limit: "6:0:0"
+    output: all
+    mem: 8G
+    comment: ICLR-2019
+    name: LeaF
+  launch:
+    type: ssh
+    <<: *slurm-host
+  host: !host
+    log_dir: /user/home/<your-username>/jaynes-mounts/leaf/{now:%Y-%m-%d}/{now:%H%M%S.%f}
+modes:
+  default:
+    <<: *default_run
+    runner:
+      !runners.Slurm
+      <<: *default_runner
+      partition: cpu
+      n_cpu: 8
+      n_gpu: 0
+  default-gpu:
+    <<: *default_run
+    runner:
+      !runners.Slurm
+      <<: *default_runner
+      setup: | # this is not really used.
+        . /usr/share/modules/init/profile.sh
+        module load tensorflow-gpu-36
+      partition: "p100"
+      n_cpu: 8
+      n_gpu: 1
+      exclude: gpu027
